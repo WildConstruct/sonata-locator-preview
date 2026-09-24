@@ -1,12 +1,10 @@
-# Fibroid Locator preview
+# Fibroid Locator — internal review
 
-Public review build for Michelle. Single-page concept with A Glass / B Clamshell / C Exploded.
+Concept for Michelle / Gynesonics. Not a Sonata product build. Not for clinical use.
 
-## Live URL
+Open: https://wildconstruct.github.io/sonata-locator-preview/
 
-GitHub Pages (after first Actions run):
-https://wildconstruct.github.io/sonata-locator-preview/
+Fallback if Pages is not live yet:
+https://raw.githack.com/WildConstruct/sonata-locator-preview/main/index.html
 
-Vercel: import this repo at https://vercel.com/new — framework preset Other, output the root. You get a `*.vercel.app` link to send.
-
-Do not send the GitHub file view or Raw. Those will look unstyled.
+A Glass / B Clamshell / C Exploded switch the 3/4 organ drawing.
