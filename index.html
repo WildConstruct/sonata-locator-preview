@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fibroid Locator concept — internal review</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <aside class="michelle" id="michelleNote">
+    <div>
+      <strong>For Michelle — concept, not a product build.</strong>
+      The 3D pear is gone on purpose. One clock: 12 = anterior, 3 = patient left, 6 = posterior. Your A/P illustrations become labels on that rotation, not two separate pictures. Station is fundus / mid / LUS. The sector stays uncovered.
+    </div>
+    <button type="button" id="dismissNote">Hide this</button>
+  </aside>
+  <div class="tablet">
+    <header class="chrome-top">
+      <div class="chrome-left">
+        <span class="time" id="clockTime">9:38</span>
+        <span class="proc">Procedure 16</span>
+        <span class="standby">STANDBY</span>
+        <span class="temp">37°C</span>
+      </div>
+      <div class="chrome-right">
+        <span class="articul">60°</span>
+        <span class="iusp">IUSP-002 · 6 MHz</span>
+        <span class="mi">MI 0.9 · TIS 0.4</span>
+      </div>
+    </header>
+    <div class="workspace">
+      <div class="gain" aria-hidden="true"><span></span><span></span><span></span></div>
+      <section class="sector-wrap">
+        <canvas id="sector" width="920" height="620" aria-label="Synthetic intrauterine ultrasound sector"></canvas>
+        <ol class="depth" aria-hidden="true"><li>0</li><li>1</li><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li></ol>
+        <div class="sector-caption">
+          <span id="planeCopy">Plane 12:00 anterior · fundus</span>
+          <span id="overlayCopy">No token in this plane</span>
+        </div>
+      </section>
+      <aside class="right-col">
+        <div class="probe-card" aria-hidden="true">
+          <div class="probe-body"></div>
+          <p>Tip 60° · shaft roll <span id="rollReadout">000°</span></p>
+        </div>
+        <div id="hudTreat" class="hud-treat hidden"></div>
+      </aside>
+    </div>
+    <div class="bottom-row">
+      <div class="tools" aria-hidden="true">
+        <button type="button" tabindex="-1"></button><button type="button" tabindex="-1"></button><button type="button" tabindex="-1"></button><button type="button" tabindex="-1"></button><button type="button" tabindex="-1"></button><button type="button" tabindex="-1"></button>
+      </div>
+      <label class="roll">
+        <span>Simulated shaft rotation <em>start anterior, clockwise — 3 o’clock = patient left</em></span>
+        <input id="roll" type="range" min="0" max="359" value="0">
+        <div class="roll-ticks"><span>12 Ant</span><span>3 pt L</span><span>6 Post</span><span>9 pt R</span></div>
+      </label>
+    </div>
+    <section class="locator" id="locatorCard">
+      <header class="locator-head">
+        <div><h1>Fibroid locator</h1><p>Clock · wall · station</p></div>
+        <div class="mode" role="group" aria-label="Locator mode">
+          <button type="button" data-mode="mapping" class="on">Mapping</button>
+          <button type="button" data-mode="treating">Treating</button>
+        </div>
+      </header>
+      <div class="station" role="tablist" aria-label="Axial station">
+        <button type="button" data-station="fundus" class="on">Fundus</button>
+        <button type="button" data-station="mid">Mid</button>
+        <button type="button" data-station="lus">LUS</button>
+      </div>
+      <div class="map-row">
+        <canvas id="clock" width="340" height="340" aria-label="Clock-face uterus map. Click to place a fibroid token."></canvas>
+        <div class="legend">
+          <p class="hint" id="placeHint">Tap the clock to place the next token on <strong>fundus</strong>.</p>
+          <ul>
+            <li><i class="swatch mapped"></i> Mapped</li>
+            <li><i class="swatch current"></i> Current target</li>
+            <li><i class="swatch logged"></i> RF logged</li>
+            <li><i class="swatch review"></i> Needs review</li>
+          </ul>
+          <p class="fine">RF logged means a completed energy cycle in this demo. It is not proof of necrosis.</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" id="btnCurrent">Set current</button>
+        <button type="button" id="btnRF">Log RF cycle</button>
+        <button type="button" id="btnReview">Flag review</button>
+        <button type="button" id="btnSize" class="ghost">Cycle size</button>
+        <button type="button" id="btnReset" class="ghost">Reset demo</button>
+      </div>
+      <div id="ledger" class="ledger"></div>
+    </section>
+  </div>
+  <p class="foot">Internal review concept. Synthetic anatomy. Not for patient care. Not an official Sonata interface.</p>
+  <script src="./app.js"></script>
+</body>
+</html>
