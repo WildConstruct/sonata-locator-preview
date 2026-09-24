@@ -1,18 +1,12 @@
 # Fibroid Locator preview
 
-If you saw a **blank white page**, the HTML was loading without its CSS and JS.
+Public review build for Michelle. Single-page concept with A Glass / B Clamshell / C Exploded.
 
-## Open it correctly
+## Live URL
 
-The GPT contour update lives in the private repo, all three files together:
+GitHub Pages (after first Actions run):
+https://wildconstruct.github.io/sonata-locator-preview/
 
-https://github.com/WildConstruct/gyensonic/tree/master/prototype
+Vercel: import this repo at https://vercel.com/new — framework preset Other, output the root. You get a `*.vercel.app` link to send.
 
-Download the whole `prototype` folder (not just `index.html`) and open `index.html` in Chrome. `style.css` and `app.js` must sit next to it.
-
-GitHub’s file view, raw.githubusercontent, and htmlpreview of `index.html` alone will look unstyled.
-
-## Files
-
-- `WildConstruct/gyensonic` `prototype/` — latest GPT uterus-contour build (dark body, cavity, A/P/L/R/U/D gizmo)
-- This public repo is only a pointer until a single-file build is published here.
+Do not send the GitHub file view or Raw. Those will look unstyled.
