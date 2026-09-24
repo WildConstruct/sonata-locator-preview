@@ -1,1 +1,232 @@
-<placeholder-will-fail-if-not-replaced>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sonata Fibroid Locator — review</title>
+<style>
+:root{--bg:#05070a;--text:#d7e4e2;--muted:#8aa0a0;--cyan:#6fe3e6;--line:#1c2a30;--ok:#3dcb6a}
+*{box-sizing:border-box}html,body{margin:0;background:#1a1d21;color:var(--text);font:14px/1.4 "Segoe UI",system-ui,sans-serif}
+button{font:inherit;cursor:pointer}
+.note{max-width:1280px;margin:12px auto 0;background:#142026;border:1px solid #2a4148;padding:10px 14px;display:flex;gap:12px;justify-content:space-between;align-items:center}
+.note button{background:transparent;color:var(--cyan);border:1px solid #3d5c62;padding:6px 10px}
+.tablet{max-width:1280px;margin:12px auto 32px;background:var(--bg);border:8px solid #111417;min-height:720px}
+.chrome{display:flex;justify-content:space-between;padding:10px 16px;color:var(--muted);font-size:13px}
+.standby{background:var(--ok);color:#06210d;font-weight:700;padding:2px 8px}
+.work{display:grid;grid-template-columns:1fr 220px;gap:12px;padding:0 16px}
+#sector{width:100%;height:240px;display:block;background:#0a1216}
+.locator{margin:12px 16px 16px;border:1px solid var(--line);padding:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.row button{background:#121b20;color:var(--text);border:1px solid #2c4147;padding:6px 10px}
+.row button.on{border-color:var(--cyan);color:var(--cyan)}
+#map{width:100%;height:420px;display:block;background:#071015}
+.legend{color:var(--muted);font-size:12px;margin-top:8px}
+.ledger{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:6px;margin-top:10px}
+.ledger div{border:1px solid var(--line);padding:6px 8px;font-size:12px}
+.ledger .on{border-color:var(--cyan)}
+.foot{max-width:1280px;margin:0 auto 24px;color:#8aa0a0;font-size:12px}
+</style>
+</head>
+<body>
+<aside class="note" id="note"><div><strong>Michelle review.</strong> A / B / C are the V6 cameras. Fundus · Mid · LUS tint the organ — they are not a separate box. Not a product build.</div><button type="button" id="hideNote">Hide</button></aside>
+<div class="tablet">
+  <header class="chrome"><div><span id="clockTime">9:38</span> · Procedure 16 · <span class="standby">STANDBY</span></div><div>60° · IUSP-002 · 6 MHz</div></header>
+  <div class="work">
+    <canvas id="sector" width="900" height="240" aria-label="Synthetic ultrasound"></canvas>
+    <p class="legend" id="planeCopy">Plane 12:00 · fundus</p>
+  </div>
+  <section class="locator">
+    <h1 style="margin:0 0 6px;font-size:16px">Fibroid locator</h1>
+    <div class="row" role="tablist" aria-label="V6 layout">
+      <button type="button" data-view="glass" class="on">A Glass</button>
+      <button type="button" data-view="clamshell">B Clamshell</button>
+      <button type="button" data-view="exploded">C Exploded</button>
+    </div>
+    <div class="row" role="tablist" aria-label="Station">
+      <button type="button" data-station="fundus" class="on">Fundus</button>
+      <button type="button" data-station="mid">Mid</button>
+      <button type="button" data-station="lus">LUS</button>
+    </div>
+    <canvas id="map" width="980" height="420" aria-label="Uterus map"></canvas>
+    <p class="legend">Fixed 3/4 pose · fundus left · cervix right. Tokens sit on the wall. Same-zone fibroids stack with a 2× mark. Off-station tokens fade.</p>
+    <div class="row">
+      <button type="button" id="btnRF">Log RF</button>
+      <button type="button" id="btnReview">Flag review</button>
+      <button type="button" id="btnReset">Reset</button>
+    </div>
+    <div id="ledger" class="ledger"></div>
+  </section>
+</div>
+<p class="foot">Internal concept. Synthetic anatomy. Not for patient care.</p>
+<script>
+const $ = id => document.getElementById(id);
+const seed = () => ([
+  {id:"F01", station:"fundus", wall:"anterior", state:"mapped"},
+  {id:"F02", station:"fundus", wall:"anterior", state:"current"},
+  {id:"F06", station:"fundus", wall:"anterior", state:"mapped"},
+  {id:"F03", station:"mid", wall:"posterior", state:"logged"},
+  {id:"F04", station:"mid", wall:"anterior", state:"mapped"},
+  {id:"F05", station:"lus", wall:"posterior", state:"review"}
+]);
+let fibroids = seed(), selected = "F02", station = "fundus", view = "glass";
+const COLOR = {mapped:"#c5d5dc", current:"#6fe3e6", logged:"#7dceab", review:"#e2b56a"};
+const map = $("map"), ctx = map.getContext("2d");
+const sector = $("sector"), sctx = sector.getContext("2d");
+function shells() {
+  const w = map.width, h = map.height;
+  if (view === "glass") return [{wall:"both", cx:w*0.50, cy:h*0.54, s:1.62, label:null}];
+  if (view === "clamshell") return [
+    {wall:"anterior", cx:w*0.50, cy:h*0.30, s:1.18, label:"ANTERIOR"},
+    {wall:"posterior", cx:w*0.50, cy:h*0.74, s:1.18, label:"POSTERIOR"}
+  ];
+  return [
+    {wall:"anterior", cx:w*0.50, cy:h*0.26, s:1.08, label:"ANTERIOR · lifted"},
+    {wall:"posterior", cx:w*0.50, cy:h*0.78, s:1.08, label:"POSTERIOR"}
+  ];
+}
+function uterusPath(c) {
+  c.beginPath();
+  c.moveTo(-112, 6);
+  c.bezierCurveTo(-122, -8, -102, -34, -78, -30);
+  c.bezierCurveTo(-64, -48, -42, -46, -18, -32);
+  c.bezierCurveTo(28, -38, 86, -20, 118, -5);
+  c.quadraticCurveTo(134, 2, 118, 10);
+  c.bezierCurveTo(86, 24, 28, 36, -18, 30);
+  c.bezierCurveTo(-48, 38, -88, 26, -112, 6);
+  c.closePath();
+}
+function cavityPath(c) {
+  c.beginPath();
+  c.moveTo(-70, 0);
+  c.bezierCurveTo(-20, -12, 40, -10, 92, 2);
+  c.bezierCurveTo(40, 10, -20, 12, -70, 0);
+  c.closePath();
+}
+function stationU(st) { return st === "fundus" ? -68 : st === "mid" ? 16 : 92; }
+function stationRange(st) {
+  if (st === "fundus") return [-120, -18];
+  if (st === "mid") return [-18, 58];
+  return [58, 140];
+}
+function drawShell(shell) {
+  ctx.save();
+  ctx.translate(shell.cx, shell.cy);
+  ctx.scale(shell.s, shell.s);
+  uterusPath(ctx);
+  ctx.fillStyle = "rgba(196,108,124,.40)"; ctx.fill();
+  ctx.strokeStyle = "rgba(236,186,194,.88)"; ctx.lineWidth = 1.4 / shell.s; ctx.stroke();
+  cavityPath(ctx); ctx.fillStyle = "rgba(20,8,14,.55)"; ctx.fill();
+  const [x0, x1] = stationRange(station);
+  uterusPath(ctx); ctx.clip();
+  ctx.fillStyle = "rgba(111,227,230,.20)"; ctx.fillRect(x0, -55, x1 - x0, 110);
+  ctx.restore();
+  if (shell.label) {
+    ctx.fillStyle = "#9bb3b2"; ctx.font = "700 11px Segoe UI, sans-serif"; ctx.textAlign = "left";
+    ctx.fillText(shell.label, 18, shell.cy - 48 * shell.s);
+  }
+}
+function layoutTokens() {
+  const groups = {};
+  fibroids.forEach(item => {
+    const key = item.station + "|" + item.wall;
+    (groups[key] = groups[key] || []).push(item);
+  });
+  const placed = [];
+  Object.values(groups).forEach(list => {
+    list.forEach((item, i) => {
+      const sh = view === "glass" ? shells()[0] : shells().find(s => s.wall === item.wall) || shells()[0];
+      const u = stationU(item.station);
+      const v = view === "glass" ? (item.wall === "anterior" ? -12 : 14) : 2;
+      const n = list.length;
+      const ox = n > 1 ? (i - (n - 1) / 2) * 20 : 0;
+      const oy = n > 1 ? ((i % 2 === 0) ? -11 : 11) : 0;
+      placed.push({ item, x: sh.cx + u * sh.s + ox, y: sh.cy + v * sh.s + oy, stack: n, first: i === 0 });
+    });
+  });
+  return placed;
+}
+function drawMap() {
+  const w = map.width, h = map.height;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "#071015"; ctx.fillRect(0, 0, w, h);
+  const title = view === "glass" ? "A  glass — one body, posterior tokens sit lower"
+    : view === "clamshell" ? "B  clamshell — hinged at fundus"
+    : "C  exploded — anterior lifted off posterior";
+  ctx.fillStyle = "#cfe3e1"; ctx.font = "700 13px Segoe UI, sans-serif"; ctx.textAlign = "left"; ctx.fillText(title, 16, 22);
+  ctx.fillStyle = "#6fe3e6"; ctx.font = "700 11px Segoe UI, sans-serif"; ctx.fillText(station.toUpperCase() + " highlighted on the organ", 16, 40);
+  shells().forEach(drawShell);
+  ctx.fillStyle = "#8aa0a0"; ctx.font = "700 11px Segoe UI, sans-serif"; ctx.textAlign = "left"; ctx.fillText("FUNDUS", 16, h - 12);
+  ctx.textAlign = "right"; ctx.fillText("CERVIX", w - 16, h - 12); ctx.textAlign = "left";
+  layoutTokens().forEach(node => {
+    const item = node.item;
+    const on = item.station === station;
+    ctx.save();
+    ctx.globalAlpha = on ? 1 : 0.22;
+    ctx.beginPath(); ctx.arc(node.x, node.y, item.id === selected ? 15 : 12, 0, Math.PI * 2);
+    ctx.fillStyle = item.state === "logged" || item.state === "review" ? COLOR[item.state] : "#102026"; ctx.fill();
+    ctx.lineWidth = item.id === selected ? 3 : 2; ctx.strokeStyle = COLOR[item.state];
+    if (item.wall === "posterior") ctx.setLineDash([3, 2]);
+    ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = "#f4f7f6"; ctx.font = "700 10px Segoe UI, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(item.id.slice(1), node.x, node.y + 0.5);
+    if (node.stack > 1 && node.first) { ctx.fillStyle = "#6fe3e6"; ctx.font = "700 10px Segoe UI, sans-serif"; ctx.fillText(node.stack + "\u00d7", node.x + 20, node.y - 14); }
+    ctx.restore();
+    item._hit = {x: node.x, y: node.y};
+  });
+}
+function drawSector() {
+  const w = sector.width, h = sector.height;
+  sctx.fillStyle = "#0a1216"; sctx.fillRect(0, 0, w, h);
+  sctx.beginPath(); sctx.moveTo(w * 0.5, 16); sctx.arc(w * 0.5, 16, h * 0.98, -0.95, Math.PI + 0.95); sctx.closePath();
+  sctx.fillStyle = "#121c22"; sctx.fill(); sctx.strokeStyle = "#2a4a52"; sctx.stroke();
+  const hits = fibroids.filter(f => f.station === station);
+  hits.forEach((f, i) => {
+    const x = w * 0.5 + (i - (hits.length - 1) / 2) * 70; const y = h * 0.52;
+    sctx.beginPath(); sctx.arc(x, y, 22, 0, Math.PI * 2);
+    sctx.strokeStyle = COLOR[f.state]; sctx.lineWidth = 2;
+    if (f.wall === "posterior") sctx.setLineDash([4, 3]);
+    sctx.stroke(); sctx.setLineDash([]);
+    sctx.fillStyle = "#d7e4e2"; sctx.font = "700 11px Segoe UI"; sctx.textAlign = "center"; sctx.fillText(f.id, x, y + 4);
+  });
+  $("planeCopy").textContent = "Station " + station + " · " + hits.length + " in plane";
+}
+function renderLedger() {
+  $("ledger").innerHTML = fibroids.map(f => `<div class="${f.id===selected?"on":""}" data-id="${f.id}"><b>${f.id}</b> · ${f.station} · ${f.wall}<br>${f.state}</div>`).join("");
+}
+function render() { drawMap(); drawSector(); renderLedger(); }
+document.querySelectorAll("[data-view]").forEach(btn => btn.onclick = () => {
+  view = btn.dataset.view;
+  document.querySelectorAll("[data-view]").forEach(b => b.classList.toggle("on", b.dataset.view === view));
+  render();
+});
+document.querySelectorAll("[data-station]").forEach(btn => btn.onclick = () => {
+  station = btn.dataset.station;
+  document.querySelectorAll("[data-station]").forEach(b => b.classList.toggle("on", b.dataset.station === station));
+  render();
+});
+$("ledger").onclick = e => {
+  const row = e.target.closest("[data-id]"); if (!row) return;
+  selected = row.dataset.id; const item = fibroids.find(f => f.id === selected);
+  if (item) { station = item.station; document.querySelectorAll("[data-station]").forEach(b => b.classList.toggle("on", b.dataset.station === station)); }
+  render();
+};
+map.onclick = e => {
+  const r = map.getBoundingClientRect();
+  const x = (e.clientX - r.left) * (map.width / r.width); const y = (e.clientY - r.top) * (map.height / r.height);
+  const hit = fibroids.find(f => f._hit && Math.hypot(f._hit.x - x, f._hit.y - y) < 20);
+  if (hit) { selected = hit.id; station = hit.station; document.querySelectorAll("[data-station]").forEach(b => b.classList.toggle("on", b.dataset.station === station)); render(); }
+};
+$("btnRF").onclick = () => { const f = fibroids.find(x => x.id === selected); if (f) f.state = "logged"; render(); };
+$("btnReview").onclick = () => { const f = fibroids.find(x => x.id === selected); if (f) f.state = "review"; render(); };
+$("btnReset").onclick = () => {
+  fibroids = seed(); selected = "F02"; station = "fundus"; view = "glass";
+  document.querySelectorAll("[data-view]").forEach(b => b.classList.toggle("on", b.dataset.view === "glass"));
+  document.querySelectorAll("[data-station]").forEach(b => b.classList.toggle("on", b.dataset.station === "fundus"));
+  render();
+};
+$("hideNote").onclick = () => $("note").style.display = "none";
+$("clockTime").textContent = new Date().toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+render();
+</script>
+</body>
+</html>
